@@ -1,0 +1,25 @@
+function output=SDLC(signal,param)
+%Initialization
+dictionary =param.dictionary;
+step_1=param.step_1;
+step_2=param.step_2;
+lambda=param.lambda;
+M=param.M;
+L=param.L;
+coeff=OMP(dictionary,signal,L);
+%calculation
+error=signal-dictionary*coeff;
+x_F=coeff.^2;
+x_1=abs(coeff);
+Psi=2*step_1*coeff-2/M*(dictionary'*dictionary-(1-lambda)*diag(ones(1,M)))*coeff+2/M*dictionary'*signal;
+coeff=1/2/step_1*Psi-lambda/4/M/step_1*sign(Psi-lambda/M*(ones(M)))-lambda/4/M/step_1*sign(Psi+lambda/M*(ones(M)));
+coeff(:,k)=coeff(:,k)+lambda/M/step_2*(E)
+end
+
+
+
+
+
+
+
+

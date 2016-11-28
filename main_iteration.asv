@@ -1,0 +1,60 @@
+clear;
+close all;
+%Initialization
+L=3;
+lambda=1;
+SNR=-10;
+parameter.num_of_code=128;
+parameter.frequency_offset=0;
+parameter.phase_offset=0;
+buffer_sdlcerror=Inf*ones(605,1);
+buffer_time=Inf*ones(605,1);
+for lambda=0:0.1:1
+    for SNR=-10:2:10
+        for counter=1:5
+parameter.SNR=SNR;
+signal_type=[2,3,3,3,3,6,6,6;4,8,16,32,64,4,8,16];%1.ASK;2.PSK;3.QAM;4.FSK;5.MSK;6.PAM.
+parameter.signal_type=repmat(signal_type,1,parameter.num_of_code);
+number_of_dictionary=size(parameter.signal_type,2);
+% [signal]=generating_signals(parameter);
+load signal_snr_m10;
+signal=[real(signal);imag(signal)];
+%High cumulant analysis
+high_cumulants=High_Cumulants(signal);
+param.dictionary=signal(:,1:size(signal_type,2));
+param.step_1=0.01;
+param.step_2=0.01;
+param.lambda=lambda;
+param.M=size(signal_type,2);
+param.L=L;
+sdlc_start=clock;
+output_sdlc=SDLC(signal,param);
+sdlc_end=clock;
+time_sdlc=etime(sdlc_end,sdlc_start);
+paramksvd.L = L;
+paramksvd.K = size(signal_type,2);% number of dictionary elements
+paramksvd.numIteration = 20; % number of iteration to execute the K-SVD algorithm.
+paramksvd.errorFlag = 0; % decompose signals until a certain error is reached. do not use fix number of coefficients.
+paramksvd.preserveDCAtom = 0;
+paramksvd.InitializationMethod =  'GivenMatrix';%Initialization
+paramksvd.initialDictionary=param.dictionary;
+% Training Dictionary Set
+ksvd_start=clock;
+[dictionary,output_ksvd]=KSVD(signal,paramksvd);
+ksvd_end=clock;
+time_ksvd=etime(ksvd_end,ksvd_start);
+coeff_sdlc=full(output_sdlc.coeff);
+coeff_ksvd=full(output_ksvd.CoefMatrix);
+[~,label_sdlc]=max(abs(coeff_sdlc));
+[~,label_ksvd]=max(abs(coeff_ksvd));
+label=repmat(1:size(signal_type,2),1,size(label_sdlc,2)/size(signal_type,2));
+error_ratio_sdlc=sum(sum(label_sdlc~=label))/size(label_sdlc,2);
+error_ratio_ksvd=sum(sum(label_ksvd~=label))/size(label_ksvd,2);
+disp(['lambda=',num2str(lambda)]);
+disp(['Error Ratio of SDLC=',num2str(error_ratio_sdlc)]);
+disp(['Error Ratio of K-SVD=',num2str(error_ratio_ksvd)]);
+disp(['Time of SDLC=',num2str(time_sdlc)]);
+disp(['Time Ratio of K-SVD=',num2str(time_ksvd)]);
+        end
+    end
+end
